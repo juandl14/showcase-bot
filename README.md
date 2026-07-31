@@ -120,6 +120,12 @@ Es el único archivo de código que necesitás tocar. Editá:
   en la lista nunca se consideran.
 - **`polling.ventanaConocidaHasta`** — la última fecha ya publicada hoy; el
   bot dispara cuando aparece algo posterior a esto.
+- **`medioDePago`** — por defecto busca "VISA CRÉDITO". Si usás otra tarjeta,
+  cambiá el regex al texto exacto como aparece en la pantalla de forma de
+  pago del sitio, o el bot no va a poder pre-seleccionar nada.
+- **`promo`** — por defecto busca una fila de tarifa que empiece con
+  "+Showcase 2X1". Si tu cine nombra distinto su promoción, ajustalo — si no
+  la encuentra, el bot descarta la función en vez de comprar sin el 2x1.
 
 El archivo tiene comentarios extensos en cada campo — es más rápido editar
 ahí mismo que resumir todo acá.
