@@ -14,6 +14,11 @@ son los de `entradas.todoshowcase.com` (ASP.NET WebForms) y
 `masshowcase.com` (PWA Bonda). Sirve tal cual para esa cadena; para otra
 tendrías que re-mapear el sitio con las herramientas de `tools/`.
 
+> Si vas a tocar o extender este proyecto con Claude Code (u otro asistente),
+> leé primero [CLAUDE.md](CLAUDE.md) — tiene las trampas del sitio ya
+> mapeadas y la regla de diseño que no se negocia, para no redescubrirlas
+> desde cero.
+
 ## La regla que no se negocia
 
 **El bot frena siempre antes del pago.** No carga datos de tarjeta, no
