@@ -1,0 +1,11 @@
+# Secretos y datos personales — nunca se commitean.
+.env
+
+# Screenshots, HTML volcado, historial, la marca de compra y el lock de
+# corridas: todo esto es de UNA sesión real y puede tener datos de tu cuenta.
+# El directorio en sí queda (para que exista tras un clone) pero su contenido no.
+dump/*
+!dump/.gitkeep
+
+node_modules/
+*.log

@@ -1,0 +1,26 @@
+{
+  "name": "showcase-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bot de compra de entradas para Cines Showcase (Argentina) con aplicación de 2x1. Frena siempre antes del pago: nunca carga datos de tarjeta.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juandl14/showcase-bot.git"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "scripts": {
+    "setup": "npx playwright install chromium",
+    "preflight": "node --env-file=.env preflight.mjs",
+    "test": "node tools/test-seats.mjs",
+    "smoke": "node smoke.mjs",
+    "start": "node --env-file=.env bot.mjs",
+    "ensayo": "node --env-file=.env bot.mjs --ensayo --ahora"
+  },
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.showcasebot</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <!-- Reemplazá __PROJECT_DIR__ por la ruta ABSOLUTA a tu clone, ej.
+             /Users/tu-usuario/showcase-bot. Ver README: "Arranque automático". -->
+        <string>__PROJECT_DIR__/launchd/run-bot.sh</string>
+    </array>
+
+    <!-- Cuándo dispara. Editá Month/Day/Hour/Minute para el día del drop que
+         esperás. Si la Mac está dormida a esa hora, corre al despertarse. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Month</key>
+        <integer>1</integer>
+        <key>Day</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>__PROJECT_DIR__</string>
+
+    <key>StandardOutPath</key>
+    <string>__PROJECT_DIR__/dump/bot.log</string>
+    <key>StandardErrorPath</key>
+    <string>__PROJECT_DIR__/dump/bot.log</string>
+
+    <!-- No correr al cargar el agente: solo a la hora programada. -->
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
