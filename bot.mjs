@@ -89,43 +89,14 @@ async function tomarLock() {
   }
 }
 
+// A partir de acá, TODO —incluida la validación de config— corre dentro del
+// try/catch/finally de más abajo. Un typo en config.mjs debe notificarte
+// igual que cualquier otro error fatal, y en cualquier caso tiene que
+// liberar el lock; dejar la validación afuera del try (como estaba en una
+// versión anterior de este archivo) rompía las dos cosas.
 if (!(await tomarLock())) {
   log(`Ya hay otra corrida de este bot en curso (${LOCK}). Salgo para no pisarla.`);
   process.exit(0);
-}
-
-// --- Validación de config ---------------------------------------------------
-if (!ENSAYO && existsSync(FLAG)) {
-  log(`Ya hay una compra registrada (${FLAG}). Salgo para no comprar de nuevo.`);
-  log('Si querés correr otra compra, borrá ese archivo.');
-  await unlink(LOCK).catch(() => {});
-  process.exit(0);
-}
-if (!ENSAYO && !/^\d{12}$/.test(cfg.codigo ?? '')) {
-  throw new Error(
-    `El código 2x1 no es válido (config.codigo = "${cfg.codigo}").\n` +
-      `Seteá SHOWCASE_2X1_CODE en tu .env con los 12 dígitos. Ver README.`
-  );
-}
-if (!cfg.funciones?.length) throw new Error('config.funciones está vacío.');
-if (!Array.isArray(cfg.zona) || !cfg.zona.length) throw new Error('config.zona está vacío.');
-if (!(cfg.medioDePago instanceof RegExp)) {
-  throw new Error('config.medioDePago tiene que ser un RegExp, ej. /VISA\\s*CR[EÉ]DITO/i.');
-}
-{
-  // Dos errores de tipeo típicos al armar la zona a mano: filas repetidas
-  // (silenciosamente se queda solo con la última) y min > max (esa fila no
-  // matchea ninguna butaca nunca, también en silencio). Fallar fuerte acá es
-  // mucho mejor que descubrirlo el día del drop viendo que una fila "no anda".
-  const vistas = new Set();
-  for (const z of cfg.zona) {
-    const et = String(z.fila ?? '').toUpperCase();
-    if (vistas.has(et)) throw new Error(`config.zona tiene la fila "${z.fila}" repetida.`);
-    vistas.add(et);
-    if (z.min != null && z.max != null && z.min > z.max) {
-      throw new Error(`config.zona: fila "${z.fila}" tiene min (${z.min}) > max (${z.max}).`);
-    }
-  }
 }
 
 // --- Día de semana en hora local de Argentina, sin depender del TZ del host ---
@@ -154,6 +125,39 @@ function resolverFunciones(fechasEnCartel) {
 
 let browser;
 try {
+  // --- Validación de config -------------------------------------------------
+  if (!ENSAYO && existsSync(FLAG)) {
+    log(`Ya hay una compra registrada (${FLAG}). Salgo para no comprar de nuevo.`);
+    log('Si querés correr otra compra, borrá ese archivo.');
+    throw { esSalidaLimpia: true }; // no es un error real: ver el catch de abajo
+  }
+  if (!ENSAYO && !/^\d{12}$/.test(cfg.codigo ?? '')) {
+    throw new Error(
+      `El código 2x1 no es válido (config.codigo = "${cfg.codigo}").\n` +
+        `Seteá SHOWCASE_2X1_CODE en tu .env con los 12 dígitos. Ver README.`
+    );
+  }
+  if (!cfg.funciones?.length) throw new Error('config.funciones está vacío.');
+  if (!Array.isArray(cfg.zona) || !cfg.zona.length) throw new Error('config.zona está vacío.');
+  if (!(cfg.medioDePago instanceof RegExp)) {
+    throw new Error('config.medioDePago tiene que ser un RegExp, ej. /VISA\\s*CR[EÉ]DITO/i.');
+  }
+  {
+    // Dos errores de tipeo típicos al armar la zona a mano: filas repetidas
+    // (silenciosamente se queda solo con la última) y min > max (esa fila no
+    // matchea ninguna butaca nunca, también en silencio). Fallar fuerte acá es
+    // mucho mejor que descubrirlo el día del drop viendo que una fila "no anda".
+    const vistas = new Set();
+    for (const z of cfg.zona) {
+      const et = String(z.fila ?? '').toUpperCase();
+      if (vistas.has(et)) throw new Error(`config.zona tiene la fila "${z.fila}" repetida.`);
+      vistas.add(et);
+      if (z.min != null && z.max != null && z.min > z.max) {
+        throw new Error(`config.zona: fila "${z.fila}" tiene min (${z.min}) > max (${z.max}).`);
+      }
+    }
+  }
+
   const creds = await getCredentials();
   browser = await chromium.launch({ headless: false }); // visible: vos tomás el control
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
@@ -393,13 +397,19 @@ try {
     await avisar('Showcase', 'No conseguí butacas en tu zona en ninguna función.');
   }
 } catch (err) {
-  const detalle = err?.stack || err?.message || String(err);
-  log('ERROR FATAL:', detalle);
-  // Best-effort: si el error pasó ANTES de tener credenciales o browser, esto
-  // igual intenta avisar — pushPhone no depende de ninguno de los dos.
-  await pushPhone('Showcase — el bot falló', String(err?.message || err).slice(0, 200)).catch(() => {});
-  await alert('Showcase — el bot falló', String(err?.message || err).slice(0, 200)).catch(() => {});
-  process.exitCode = 1;
+  // "Ya hay una compra registrada" no es una falla: es la traba anti-doble-compra
+  // haciendo su trabajo. Sale limpio, sin notificación de error ni exit code 1.
+  if (err?.esSalidaLimpia) {
+    // nada más que hacer: el mensaje ya se logueó antes de tirar esto
+  } else {
+    const detalle = err?.stack || err?.message || String(err);
+    log('ERROR FATAL:', detalle);
+    // Best-effort: si el error pasó ANTES de tener credenciales o browser, esto
+    // igual intenta avisar — pushPhone no depende de ninguno de los dos.
+    await pushPhone('Showcase — el bot falló', String(err?.message || err).slice(0, 200)).catch(() => {});
+    await alert('Showcase — el bot falló', String(err?.message || err).slice(0, 200)).catch(() => {});
+    process.exitCode = 1;
+  }
 } finally {
   await browser?.close().catch(() => {});
   await unlink(LOCK).catch(() => {});
